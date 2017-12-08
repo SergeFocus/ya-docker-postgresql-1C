@@ -59,11 +59,101 @@ RUN apt-get update && apt-get install -y \
     && wget -O- $(wget -O- https://api.github.com/repos/dalibo/hypopg/releases/latest|jq -r '.tarball_url') | tar -xzf - \
     && wget -O- $(wget -O- https://api.github.com/repos/rjuju/pg_track_settings/releases/latest|jq -r '.tarball_url') | tar -xzf - \
     && wget -O- $(wget -O- https://api.github.com/repos/reorg/pg_repack/tags|jq -r '.[0].tarball_url') | tar -xzf - \
-    && for f in $(ls); do cd $f; make install; cd ..; rm    -rf $f; done \
-    && apt-get purge -y --auto-remove curl gcc jq make postgresql-server-dev-pro-1c-${PG_VERSION} wget
+    && for f in $(ls); do cd $f; make install; cd ..; rm    -rf $f; done
 
- RUN rm -rf ${PG_HOME} \
- && rm -rf /var/lib/apt/lists/*
+RUN wget --quiet -O - http://packages.2ndquadrant.com/repmgr3/apt/0xD3FA41F6.asc | apt-key add - \
+ && echo deb http://packages.2ndquadrant.com/repmgr3/apt/ $(lsb_release -cs)-2ndquadrant main > /etc/apt/sources.list.d/repmgr3.list
+
+
+
+# apt-key adv --fetch-keys http://packages.2ndquadrant.com/repmgr3/apt/0xD3FA41F6.asc
+
+# echo deb http://packages.2ndquadrant.com/repmgr3/apt/ $(lsb_release -cs)-2ndquadrant main > /etc/apt/sources.list.d/repmgr3.list
+
+RUN apt-get update
+
+# RUN apt-get install -y --nodeps \
+#     postgresql-${PG_VERSION}-repmgr \
+#     repmgr-common \
+
+RUN apt-get download \
+    postgresql-${PG_VERSION}-repmgr \
+    repmgr-common
+
+# repmgr
+
+# postgresql-9.6-repmgr
+# repmgr-common
+
+# postgresql-common
+# postgresql-client-common
+
+
+RUN apt-get purge -y --auto-remove curl gcc jq make postgresql-server-dev-pro-1c-${PG_VERSION} wget
+
+RUN dpkg -i --ignore-depends=postgresql-common *.deb
+
+RUN rm -rf *.deb
+
+# Name of the cluster you want to start
+ENV CLUSTER_NAME pg_cluster
+
+# special repmgr db for cluster info
+ENV REPLICATION_DB replication_db
+ENV REPLICATION_USER replication_user
+ENV REPLICATION_PASSWORD replication_pass
+ENV REPLICATION_PRIMARY_PORT 5432
+
+# priority on electing new master
+ENV NODE_PRIORITY 100
+
+# ENV CONFIGS "listen_addresses:'*'"
+                                    # in format variable1:value1[,variable2:value2[,...]]
+                                    # used for pgpool.conf file
+
+ENV PARTNER_NODES ""
+                    # List (comma separated) of all nodes in the cluster, it allows master to be adaptive on restart
+                    # (can act as a new standby if new master has been already elected)
+
+ENV MASTER_ROLE_LOCK_FILE_NAME $PGDATA/master.lock
+                                                   # File will be put in $MASTER_ROLE_LOCK_FILE_NAME when:
+                                                   #    - node starts as a primary node/master
+                                                   #    - node promoted to a primary node/master
+                                                   # File does not exist
+                                                   #    - if node starts as a standby
+ENV STANDBY_ROLE_LOCK_FILE_NAME $PGDATA/standby.lock
+                                                  # File will be put in $STANDBY_ROLE_LOCK_FILE_NAME when:
+                                                  #    - event repmgrd_failover_follow happened
+                                                  # contains upstream NODE_ID
+                                                  # that basically used when standby changes upstream node set by default
+ENV REPMGR_WAIT_POSTGRES_START_TIMEOUT 90
+                                            # For how long in seconds repmgr will wait for postgres start on current node
+                                            # Should be big enough to perform post replication start which might take from a minute to a few
+ENV USE_REPLICATION_SLOTS 1
+                                # Use replication slots to make sure that WAL files will not be removed without beein synced to replicas
+                                # Recomended(not required though) to put 0 for replicas of the second and deeper levels
+ENV CLEAN_OVER_REWIND 0
+                        # Clean $PGDATA directory before start standby and not try to rewind
+ENV SSH_ENABLE 0
+                        # If you need SSH server running on the node
+
+#### Advanced options ####
+ENV REPMGR_PID_FILE /tmp/repmgrd.pid
+ENV WAIT_SYSTEM_IS_STARTING 5
+ENV STOPPING_LOCK_FILE /tmp/stop.pid
+ENV REPLICATION_LOCK_FILE /tmp/replication
+ENV STOPPING_TIMEOUT 15
+ENV CONNECT_TIMEOUT 2
+ENV RECONNECT_ATTEMPTS 3
+ENV RECONNECT_INTERVAL 5
+ENV MASTER_RESPONSE_TIMEOUT 20
+ENV LOG_LEVEL INFO
+ENV CHECK_PGCONNECT_TIMEOUT 10
+ENV REPMGR_SLOT_NAME_PREFIX repmgr_slot_
+
+
+RUN rm -rf ${PG_HOME} \
+&& rm -rf /var/lib/apt/lists/*
 
 COPY runtime/ ${PG_APP_HOME}/
 COPY entrypoint.sh /sbin/entrypoint.sh
