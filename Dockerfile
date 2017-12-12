@@ -159,8 +159,21 @@ COPY runtime/ ${PG_APP_HOME}/
 COPY entrypoint.sh /sbin/entrypoint.sh
 RUN chmod 755 /sbin/entrypoint.sh
 
+COPY ./pgsql/bin /usr/local/bin/cluster
+RUN chmod -R +x /usr/local/bin/cluster
+RUN ln -s /usr/local/bin/cluster/functions/* /usr/local/bin/
+COPY ./pgsql/configs /var/cluster_configs
+
+ENV NOTVISIBLE "in users profile"
+
+COPY ./ssh /home/postgres/.ssh
+RUN chown -R postgres:postgres /home/postgres
+
+
+EXPOSE 22
 EXPOSE 5432/tcp
 VOLUME ["${PG_HOME}", "${PG_RUNDIR}", "${PG_LOGDIR}", "${PG_DATADIR}"]
 VOLUME ["${PG_TEMPTBLSPC}", "${PG_V81C_DATA}", "${PG_V81C_INDEX}"]
 WORKDIR ${PG_HOME}
+
 ENTRYPOINT ["/sbin/entrypoint.sh"] 
