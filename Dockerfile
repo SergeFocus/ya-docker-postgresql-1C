@@ -176,4 +176,5 @@ VOLUME ["${PG_HOME}", "${PG_RUNDIR}", "${PG_LOGDIR}", "${PG_DATADIR}"]
 VOLUME ["${PG_TEMPTBLSPC}", "${PG_V81C_DATA}", "${PG_V81C_INDEX}"]
 WORKDIR ${PG_HOME}
 
-ENTRYPOINT ["/sbin/entrypoint.sh"] 
+# ENTRYPOINT ["/sbin/entrypoint.sh"] 
+ENTRYPOINT ["/usr/local/bin/cluster/entrypoint.sh"] 

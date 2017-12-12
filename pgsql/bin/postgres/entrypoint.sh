@@ -1,30 +1,15 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -e
-source ${PG_APP_HOME}/functions
 
-[[ ${DEBUG} == true ]] && set -x
+echo '>>> TUNING UP POSTGRES...'
+echo "*:$REPLICATION_PRIMARY_PORT:*:$REPLICATION_USER:$REPLICATION_PASSWORD" >> /home/postgres/.pgpass
+chmod 0600 /home/postgres/.pgpass
+chown postgres:postgres /home/postgres/.pgpass
 
-# allow arguments to be passed to postgres
-if [[ ${1:0:1} = '-' ]]; then
-  EXTRA_ARGS="$@"
-  set --
-elif [[ ${1} == postgres || ${1} == $(which postgres) ]]; then
-  EXTRA_ARGS="${@:2}"
-  set --
+if ! has_pg_cluster; then
+    echo ">>> Cleaning data folder which might have some garbage..."
+    rm -rf $PGDATA/*
 fi
-
-# default behaviour is to launch postgres
-if [[ -z ${1} ]]; then
-  map_uidgid
-
-  create_datadir
-  create_certdir
-  create_logdir
-  create_rundir
-
-  set_resolvconf_perms
-
-  configure_postgresql
 
 CURRENT_MASTER=`cluster_master || echo ''`
 echo ">>> Auto-detected master name: '$CURRENT_MASTER'"
@@ -49,13 +34,16 @@ else
     fi
 fi
 
+chown -R postgres $PGDATA && chmod -R 0700 $PGDATA
+
 /usr/local/bin/cluster/repmgr/configure.sh
 
-
-  echo "Starting PostgreSQL ${PG_VERSION}..."
-  exec start-stop-daemon --start --chuid ${PG_USER}:${PG_USER} \
-    --exec ${PG_BINDIR}/postgres -- -D ${PG_DATADIR} ${EXTRA_ARGS}
+echo ">>> Sending in background postgres start..."
+if [[ "$CURRENT_REPLICATION_PRIMARY_HOST" == "" ]]; then
+    cp -f /usr/local/bin/cluster/postgres/primary/entrypoint.sh /docker-entrypoint-initdb.d/
+    /docker-entrypoint.sh postgres &
 else
-  exec "$@"
+    /usr/local/bin/cluster/postgres/standby/entrypoint.sh
 fi
 
+/usr/local/bin/cluster/repmgr/start.sh
