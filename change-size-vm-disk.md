@@ -22,7 +22,7 @@ $ docker-machine create -d virtualbox --virtualbox-disk-size "102400" default
 
 в cтроке 
 ```
-"${DOCKER_MACHINE}" create -d virtualbox --virtualbox-disk-size "102400" $PROXY_ENV "${VM}"
+"${DOCKER_MACHINE}" create -d virtualbox $PROXY_ENV "${VM}"
 ```
 параметр `--virtualbox-disk-size "102400"`
 
