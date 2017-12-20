@@ -9,5 +9,6 @@ dependencies:
 test:
   override:
     - docker build -t silverbulleters/ya-docker-postgresql-1c .
+    - docker build -t silverbulleters/pgbadger pgbadger/
     - docker run -d --name=postgresql silverbulleters/ya-docker-postgresql-1c; sleep 10
     - docker run -it --volumes-from=postgresql silverbulleters/ya-docker-postgresql-1c sudo -u postgres -H psql -c "\conninfo"

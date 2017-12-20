@@ -2,9 +2,11 @@ version: '2'
 services:
   PostgreSQL:
     restart: always
+    build: 
+      context: .
     image: silverbulleters/ya-docker-postgresql-1c:latest
-    tmpfs:
-      - /var/lib/postgresql/temptblspc
+    # tmpfs:
+    #   - /var/lib/postgresql/temptblspc
     ports:
       - "5432:5432"
     environment:
@@ -25,7 +27,7 @@ services:
       - PG_TIMEZONE=Europe/Moscow
     volumes:
       - pg-data-master:/var/lib/postgresql/9.6/main
-   #   - pg-temptbl-master:/var/lib/postgresql/temptblspc
+      - pg-temptbl-master:/var/lib/postgresql/temptblspc
       - pg-v81cdata-master:/var/lib/postgresql/v81c_data
       - pg-v81cindex-master:/var/lib/postgresql/v81c_index
       - pg-log-master:/var/log/postgresql
@@ -33,8 +35,8 @@ services:
 
   PostgreSQLSlave:
     image: silverbulleters/ya-docker-postgresql-1c:latest
-    tmpfs:
-      - /var/lib/postgresql/temptblspc
+    # tmpfs:
+    #   - /var/lib/postgresql/temptblspc
     links: 
       - PostgreSQL:master
     environment: 
@@ -47,7 +49,7 @@ services:
       - REPLICATION_SSLMODE=prefer
     volumes:
       - pg-data-slave:/var/lib/postgresql/9.6/main
-    #  - pg-temptbl-slave:/var/lib/postgresql/temptblspc
+      - pg-temptbl-slave:/var/lib/postgresql/temptblspc
       - pg-v81cdata-slave:/var/lib/postgresql/v81c_data
       - pg-v81cindex-slave:/var/lib/postgresql/v81c_index
       - pg-log-slave:/var/log/postgresql
@@ -78,7 +80,7 @@ services:
         - PostgreSQLSlave:slave
 
   pghero-db1:
-    image: ankane/pghero
+    image: ankane/pghero:v2.0.2
     environment:
       - DATABASE_URL=postgres://postgres:somepass@master-db:5432/frag-20
     links:
@@ -86,7 +88,17 @@ services:
     ports:
       - 10000:8080
     
-  
+  pgbadger:
+    container_name: pgbadger
+    build: 
+      context: pgbadger
+    image: silverbulleters/pgbadger:latest
+    ports:
+      - 9980:80
+    volumes:
+      - logstash-data:/var/log/pg-logs
+      # - ./:/srv
+
   mamonsu:
     container_name: mamonsu
     build: 
@@ -105,19 +117,43 @@ services:
     links:
       - PostgreSQL:master
 
-  #log-beats:
+  log-beats:
+    build:
+      context: filebeat/
+    image: silverbulleters/filebeat:6.1.0
+    volumes:
+      - pg-log-master:/var/log/postgresql:ro
+
+  logstash:
+    build:
+      context: logstash/
+    image: silverbulleters/logstash:6.1.0
+    volumes:
+      - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
+      - ./logstash/pipeline:/usr/share/logstash/pipeline:ro
+      - logstash-data:/var/log/pg-logs/
+    ports:
+      - "5000:5000"
+      - "5044:5044"
+      - "9600:9600"
+    environment:
+      LS_JAVA_OPTS: "-Xmx256m -Xms256m"
+
 
 volumes:
    pg-data-master:
-   #pg-temptbl-master: в тестовом режиме убираем TMPFS из монтирования
+   pg-temptbl-master:
    pg-v81cdata-master:
    pg-v81cindex-master:
    pg-log-master:
 
    pg-data-slave:
-   #pg-temptbl-slave:
+   pg-temptbl-slave:
    pg-v81cdata-slave:
    pg-v81cindex-slave:
    pg-log-slave:
 
    pgadmin-data:
+
+   logstash-data:
+   

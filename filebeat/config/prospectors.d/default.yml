@@ -1,0 +1,11 @@
+- input_type: log
+  paths:
+    - /var/log/postgresql/postgresql-*.log
+  multiline.pattern: '^[[:space:]]'
+  multiline.negate: false
+  multiline.match: after
+
+
+# - input_type: log
+#   paths:
+#     - /val/log/*.log

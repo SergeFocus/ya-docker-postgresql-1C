@@ -245,7 +245,7 @@ initialize_database() {
 
   # configure logging
   set_postgresql_param "log_directory" "${PG_LOGDIR}"
-  set_postgresql_param "log_filename" "postgresql-${PG_VERSION}-main.log"
+  # set_postgresql_param "log_filename" "postgresql-${PG_VERSION}-main.log"
 
   # trust connections from local network
   if [[ ${PG_TRUST_LOCALNET} == true ]]; then
@@ -529,6 +529,13 @@ enable_magic() {
     echo "MamonSu try to tune PG"
     exec_as_postgres ${PG_BINDIR}/pg_ctl -D ${PG_DATADIR} -w start >/dev/null
     mamonsu tune
+    psql -U ${PG_USER} -c "ALTER SYSTEM SET log_filename='postgresql-%H.log';" >/dev/null 2>&1
+    psql -U ${PG_USER} -c "ALTER SYSTEM SET log_min_duration_statement='0';" >/dev/null 2>&1
+    psql -U ${PG_USER} -c "ALTER SYSTEM SET log_error_verbosity='default';" >/dev/null 2>&1
+    psql -U ${PG_USER} -c "ALTER SYSTEM SET log_rotation_age='1h';" >/dev/null 2>&1
+    psql -U ${PG_USER} -c "ALTER SYSTEM SET log_truncate_on_rotation='on';" >/dev/null 2>&1
+    psql -U ${PG_USER} -c "ALTER SYSTEM SET log_timezone='Europe/Moscow';" >/dev/null 2>&1
+    psql -U ${PG_USER} -c "ALTER SYSTEM SET log_file_mode = '0655';" >/dev/null 2>&1
     exec_as_postgres ${PG_BINDIR}/pg_ctl -D ${PG_DATADIR} -w stop >/dev/null
     echo "end mamonsu worker"
     echo "whereis an additional conf"
@@ -585,7 +592,7 @@ configure_postgresql() {
     adoptive_io
     adoptive_sync
 
-    enable_magic
+     enable_magic
 
     #adoptive_fstat  
   esac
