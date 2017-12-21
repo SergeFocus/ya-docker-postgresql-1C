@@ -16,14 +16,7 @@ COPY mamonsu-entrypoint.sh /
 
 COPY init-start.sh /
 
-# ENTRYPOINT ["/mamonsu-entrypoint.sh"]
 ENTRYPOINT ["/bin/bash"]
 CMD ["/mamonsu-entrypoint.sh"]
 
 EXPOSE 10050
-
-# CMD ["mamonsu -c /etc/mamonsu/agent.conf -p /var/run/mamonsu.pid"]
-# CMD ["mamonsu"]
-# ENTRYPOINT ["mamonsu"]
-
-# CMD ["-c /etc/mamonsu/agent.conf"]
