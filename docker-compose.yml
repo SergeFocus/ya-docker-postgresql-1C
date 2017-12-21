@@ -85,6 +85,8 @@ services:
     environment:
       # - DATABASE_URL=postgres://postgres:somepass@master-db:5432/postgres
       - RACK_ENV=production
+      - PGHERO_USERNAME=admin
+      - PGHERO_PASSWORD=admin
     links:
       - PostgreSQL:master-db
     ports:
