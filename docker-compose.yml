@@ -80,14 +80,17 @@ services:
         - PostgreSQL:master
         - PostgreSQLSlave:slave
 
-  pghero-db1:
-    image: ankane/pghero:v2.0.2
+  pghero:
+    image: ankane/pghero
     environment:
-      - DATABASE_URL=postgres://postgres:somepass@master-db:5432/frag-20
+      # - DATABASE_URL=postgres://postgres:somepass@master-db:5432/postgres
+      - RACK_ENV=production
     links:
       - PostgreSQL:master-db
     ports:
       - 10000:8080
+    volumes:
+      - ./pghero/pghero.yml:/app/config/pghero.yml:ro
     
   pgbadger:
     container_name: pgbadger
