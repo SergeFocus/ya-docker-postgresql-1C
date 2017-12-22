@@ -98,6 +98,7 @@ services:
       - 9980:80
     volumes:
       - logstash-data:/var/log/pg-logs
+      - pgbadger-data:/var/www/html
       # - ./:/srv
 
   mamonsu:
@@ -157,4 +158,5 @@ volumes:
    pgadmin-data:
 
    logstash-data:
+   pgbadger-data:
    
