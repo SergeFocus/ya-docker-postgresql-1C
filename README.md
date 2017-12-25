@@ -365,7 +365,8 @@ docker exec -it postgresql tail -f /var/log/postgresql/postgresql-17.log
 
 
 ## PgBadger
-Анализ журналов работы выпоняется с помощью сервиса [PgBadger](https://github.com/VanessaDockers/pgbadger-for-steroids)
+Анализ журналов работы выпоняется в сервисе [PgBadger](https://github.com/VanessaDockers/pgbadger-for-steroids) 
+разворачиваемого из образа [pgbadger-for-steroids](https://hub.docker.com/r/silverbulleters/pgbadger-for-steroids/) 
 
 # UID/GID mapping
 
